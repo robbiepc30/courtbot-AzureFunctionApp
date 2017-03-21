@@ -1,17 +1,21 @@
-﻿module.exports = function (context, req) {
+﻿var qs = require("querystring");
+var twilio = require('twilio');
+
+module.exports = function (context, req) {
     context.log('JavaScript HTTP trigger function processed a request.');
 
-    if (req.query.name || (req.body && req.body.name)) {
-        context.res = {
-            // status: 200, /* Defaults to 200 */
-            body: "Hello " + (req.query.name || req.body.name)
-        };
-    }
-    else {
-        context.res = {
-            status: 400,
-            body: "Please pass a name on the query string or in the request body"
-        };
-    }
-    context.done();
+    var formValues = qs.parse(req.body);
+    context.log(formValues);
+    var twiml = new twilio.TwimlResponse();
+    twiml.message('You said: ' + formValues.Body);
+
+    res = {
+        status: 200,
+        body: twiml.toString(),
+        headers: {
+            'Content-Type': 'application/xml'
+        },
+        isRaw: true
+    };
+    context.done(null, res);
 };
