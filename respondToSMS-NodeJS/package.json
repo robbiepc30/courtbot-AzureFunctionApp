@@ -2,12 +2,14 @@
   "name": "respondToSMS-NodeJS",
   "version": "0.0.1",
   "description": "Receive SMS with Azure Functions and Node.js",
-  "main": "index.js",
+  "main": "respondToSMS.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Robbie Courtney",
   "dependencies": {
+    "cookie": "^0.3.1",
+    "crypto": "0.0.3",
     "twilio": "^2.11.1"
   }
 }
