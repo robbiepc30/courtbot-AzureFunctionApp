@@ -2,7 +2,7 @@
   "name": "respondToSMS-NodeJS",
   "version": "0.0.1",
   "description": "Receive SMS with Azure Functions and Node.js",
-  "main": "respondToSMS.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
