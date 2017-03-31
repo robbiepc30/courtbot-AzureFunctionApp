@@ -1,4 +1,5 @@
-﻿var qs = require('querystring');
+﻿'use strict';
+var qs = require('querystring');
 var twilio = require('twilio');
 var cookie = require('cookie');
 var crypto = require('crypto');
@@ -8,28 +9,10 @@ var encryptStandard = "aes256";
 module.exports = function (context, req) {
     context.log('JavaScript HTTP trigger function processed a request.');
     var formValues = qs.parse(req.body);
+    var cookieSession = getCookieSession(req.headers.cookie);
     //context.log(formValues);
     var twiml = new twilio.TwimlResponse();
     twiml.message('You said: ' + formValues.Body);
-
-    var session;
-
-
-    var cookies = cookie.parse(req.headers.cookie || "", {
-          secure: true
-    });
-
-    if (cookies.session) {
-        context.log("session cookie found");
-        var decryptCookie = decrypt(cookies.session)
-        context.log("session cookie : " + decryptCookie);
-
-        session = JSON.parse(decryptCookie);
-    }
-    else {
-        context.log("no cookie name found");
-        session = {askQueued: false, name: "xbob"};
-    }
 
     var encryptSessionString = encrypt(JSON.stringify(session))
     var setCookie = cookie.serialize("session", encryptSessionString, {
@@ -48,16 +31,37 @@ module.exports = function (context, req) {
     context.done(null, res);
 };
 
-function encrypt(text){
-  var cipher = crypto.createCipher(encryptStandard,encryptKey)
-  var crypted = cipher.update(text,'utf8','hex')
-  crypted += cipher.final('hex');
-  return crypted;
+function encrypt(text) {
+    var cipher = crypto.createCipher(encryptStandard, encryptKey)
+    var crypted = cipher.update(text, 'utf8', 'hex')
+    crypted += cipher.final('hex');
+    return crypted;
 }
- 
-function decrypt(text){
-  var decipher = crypto.createDecipher(encryptStandard,encryptKey)
-  var dec = decipher.update(text,'hex','utf8')
-  dec += decipher.final('utf8');
-  return dec;
+
+function decrypt(text) {
+    var decipher = crypto.createDecipher(encryptStandard, encryptKey)
+    var dec = decipher.update(text, 'hex', 'utf8')
+    dec += decipher.final('utf8');
+    return dec;
+}
+
+function getCookieSession(cookie) {
+    var cookies = cookie.parse(req.headers.cookie || "", {
+        secure: true
+    });
+    var cookieSession;
+
+    if (cookies.session) {
+        context.log("session cookie found");
+        var decryptCookie = decrypt(cookies.session);
+        context.log("session cookie : " + decryptCookie);
+
+        cookieSession = JSON.parse(decryptCookie);
+    }
+    else { // set first time cookie for Twilio 
+        context.log("no cookie name found");
+        cookieSession = { askQueued: false, name: "xbob" };
+    }
+
+    return cookieSession;
 }
