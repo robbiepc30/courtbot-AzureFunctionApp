@@ -1,4 +1,4 @@
-﻿'use strict';
+﻿//'use strict';
 var qs = require('querystring');
 var twilio = require('twilio');
 var cookie = require('cookie');
