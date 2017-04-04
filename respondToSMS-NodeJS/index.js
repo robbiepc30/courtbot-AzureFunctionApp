@@ -12,15 +12,25 @@ module.exports = function (context, req) {
     req.session = getCookieSession(context, req);
     //context.log(formValues);
     var twiml = new twilio.TwimlResponse();
-    var text =  formValues.Body;
+    var text = formValues.Body;
     if (isResponseYes(text) || isResponseNo(text)) {
         context.log("Response was Yes or No : " + text);
+        if (req.session.askedReminder) {
+            context.log("has req.session.askedReminder");
+        }
+        else {
+            context.log("lookup phone # in queued database table");
+        }
     }
 
     twiml.message('You said: ' + formValues.Body);
 
-    var encryptSessionString = encrypt(JSON.stringify(req.session))
-    var setCookie = cookie.serialize("session", encryptSessionString, {
+    //var encryptSessionString = encrypt(JSON.stringify(req.session));
+    // var setCookie = cookie.serialize("session", encryptSessionString, {
+    //     secure: true
+    // });
+    var sessionString = JSON.stringify(req.session);
+    var setCookie = cookie.serialize("session", sessionString, {
         secure: true
     });
 
@@ -45,10 +55,13 @@ function getCookieSession(context, req) {
 
     if (cookies.session) {
         context.log("session cookie found");
-        var decryptCookie = decrypt(cookies.session);
-        context.log("session cookie : " + decryptCookie);
+        // var decryptCookie = decrypt(cookies.session);
+        // context.log("session cookie : " + decryptCookie);
 
-        cookieSession = JSON.parse(decryptCookie);
+        // cookieSession = JSON.parse(decryptCookie);
+         context.log("session cookie : " + cookies.session);
+        cookieSession = JSON.parse(cookies.session);
+
     }
     else { // set first time cookie for Twilio 
         context.log("no cookie name found");
