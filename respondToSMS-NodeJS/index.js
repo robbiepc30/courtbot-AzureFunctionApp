@@ -12,6 +12,11 @@ module.exports = function (context, req) {
     req.session = getCookieSession(context, req);
     //context.log(formValues);
     var twiml = new twilio.TwimlResponse();
+    var text =  formValues.Body;
+    if (isResponseYes(text) || isResponseNo(text)) {
+        context.log("Response was Yes or No : " + text);
+    }
+
     twiml.message('You said: ' + formValues.Body);
 
     var encryptSessionString = encrypt(JSON.stringify(req.session))
@@ -51,6 +56,16 @@ function getCookieSession(context, req) {
     }
 
     return cookieSession;
+}
+
+function isResponseYes(text) {
+    text = text.toUpperCase().trim();
+    return (text === 'YES' || text === 'YEA' || text === 'YUP' || text === 'Y');
+}
+
+function isResponseNo(text) {
+    text = text.toUpperCase().trim();
+    return (text === 'NO' || text === 'N');
 }
 
 function encrypt(text) {
