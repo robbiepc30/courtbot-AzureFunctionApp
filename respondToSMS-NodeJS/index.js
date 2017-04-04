@@ -1,4 +1,4 @@
-﻿//'use strict';
+﻿'use strict';
 var qs = require('querystring');
 var twilio = require('twilio');
 var cookie = require('cookie');
@@ -9,17 +9,17 @@ var encryptStandard = "aes256";
 module.exports = function (context, req) {
     context.log('JavaScript HTTP trigger function processed a request.');
     var formValues = qs.parse(req.body);
-    var cookieSession = getCookieSession(req.headers.cookie);
+    req.session = getCookieSession(req);
     //context.log(formValues);
     var twiml = new twilio.TwimlResponse();
     twiml.message('You said: ' + formValues.Body);
 
-    var encryptSessionString = encrypt(JSON.stringify(session))
+    var encryptSessionString = encrypt(JSON.stringify(req.session))
     var setCookie = cookie.serialize("session", encryptSessionString, {
         secure: true
     });
 
-    res = {
+    var res = {
         status: 200,
         body: twiml.toString(),
         headers: {
@@ -28,7 +28,29 @@ module.exports = function (context, req) {
         },
         isRaw: true
     };
+
     context.done(null, res);
+
+    function getCookieSession(req) {
+        var cookies = cookie.parse(req.headers.cookie || "", {
+            secure: true
+        });
+        var cookieSession;
+
+        if (cookies.session) {
+            context.log("session cookie found");
+            var decryptCookie = decrypt(cookies.session);
+            context.log("session cookie : " + decryptCookie);
+
+            cookieSession = JSON.parse(decryptCookie);
+        }
+        else { // set first time cookie for Twilio 
+            context.log("no cookie name found");
+            cookieSession = { askQueued: false, name: "xbob" };
+        }
+
+        return cookieSession;
+    }
 };
 
 function encrypt(text) {
@@ -45,23 +67,3 @@ function decrypt(text) {
     return dec;
 }
 
-function getCookieSession(cookie) {
-    var cookies = cookie.parse(req.headers.cookie || "", {
-        secure: true
-    });
-    var cookieSession;
-
-    if (cookies.session) {
-        context.log("session cookie found");
-        var decryptCookie = decrypt(cookies.session);
-        context.log("session cookie : " + decryptCookie);
-
-        cookieSession = JSON.parse(decryptCookie);
-    }
-    else { // set first time cookie for Twilio 
-        context.log("no cookie name found");
-        cookieSession = { askQueued: false, name: "xbob" };
-    }
-
-    return cookieSession;
-}
