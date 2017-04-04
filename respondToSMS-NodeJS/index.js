@@ -9,7 +9,7 @@ var encryptStandard = "aes256";
 module.exports = function (context, req) {
     context.log('JavaScript HTTP trigger function processed a request.');
     var formValues = qs.parse(req.body);
-    req.session = getCookieSession(req);
+    req.session = getCookieSession(context, req);
     //context.log(formValues);
     var twiml = new twilio.TwimlResponse();
     twiml.message('You said: ' + formValues.Body);
@@ -30,28 +30,28 @@ module.exports = function (context, req) {
     };
 
     context.done(null, res);
-
-    function getCookieSession(req) {
-        var cookies = cookie.parse(req.headers.cookie || "", {
-            secure: true
-        });
-        var cookieSession;
-
-        if (cookies.session) {
-            context.log("session cookie found");
-            var decryptCookie = decrypt(cookies.session);
-            context.log("session cookie : " + decryptCookie);
-
-            cookieSession = JSON.parse(decryptCookie);
-        }
-        else { // set first time cookie for Twilio 
-            context.log("no cookie name found");
-            cookieSession = { askQueued: false, name: "xbob" };
-        }
-
-        return cookieSession;
-    }
 };
+
+function getCookieSession(context, req) {
+    var cookies = cookie.parse(req.headers.cookie || "", {
+        secure: true
+    });
+    var cookieSession;
+
+    if (cookies.session) {
+        context.log("session cookie found");
+        var decryptCookie = decrypt(cookies.session);
+        context.log("session cookie : " + decryptCookie);
+
+        cookieSession = JSON.parse(decryptCookie);
+    }
+    else { // set first time cookie for Twilio 
+        context.log("no cookie name found");
+        cookieSession = { askQueued: false, name: "xbob" };
+    }
+
+    return cookieSession;
+}
 
 function encrypt(text) {
     var cipher = crypto.createCipher(encryptStandard, encryptKey)
