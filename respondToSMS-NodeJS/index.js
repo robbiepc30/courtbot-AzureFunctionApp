@@ -6,13 +6,16 @@ var crypto = require('crypto');
 var encryptKey = "s0m3Rand0mStr!ng"; // this should be put into a config var, env var
 var encryptStandard = "aes256";
 
+
 module.exports = function (context, req) {
+    var res;
+    var twiml = new twilio.TwimlResponse();
     context.log('JavaScript HTTP trigger function processed a request.');
     var formValues = qs.parse(req.body);
     req.session = getCookieSession(context, req);
     //context.log(formValues);
-    var twiml = new twilio.TwimlResponse();
     var text = formValues.Body;
+    context.log("req.body.Body text: " + text);
 
     // Is this a response to a queue-triggered SMS? If so, "session" is stored in queue record
     // this needs to be refactored so it is more readable... TODO...
@@ -28,6 +31,7 @@ module.exports = function (context, req) {
         context.log("has req.session.askedReminder")
         if (isResponseYes(text)) {
             context.log("has req.session.askedReminder and texted Yes")
+
             // db.addReminder({
             //     caseId: req.session.match.id,
             //     phone: req.body.From,
@@ -38,17 +42,15 @@ module.exports = function (context, req) {
             //     }
             // });
 
-            // twiml.sms('Sounds good. We will attempt to text you a courtesy reminder the day before your hearing date. Note that court schedules frequently change. You should always confirm your hearing date and time by going to ' + process.env.COURT_PUBLIC_URL);
-            // req.session.askedReminder = false;
-            // res.send(twiml.toString());
+            twiml.sms('Sounds good. We will attempt to text you a courtesy reminder the day before your hearing date. Note that court schedules frequently change. You should always confirm your hearing date and time by going to ' + process.env.COURT_PUBLIC_URL);
         }
         else {
             context.log("has req.session.askedQueued and did NOT answer yes")
-            // twiml.sms('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
-            // req.session.askedReminder = false;
-            // res.send(twiml.toString());
+            twiml.sms('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
         }
-        context.done(null, res);
+        req.session.askedReminder = false; //reset var to false
+        res = generateResponse(req, twiml);
+        return context.done(null, res);
     }
 
     // If did not find a citation from a previous text... check the response for yes previouse text searched for a citation but did not finddid not find citation but gave an option to send reminder if citation shows up later...
@@ -56,6 +58,8 @@ module.exports = function (context, req) {
         context.log("has req.session.askedQueued")
         if (isResponseYes(text)) {
             context.log("has req.session.askedQueued and texted Yes")
+            twiml.sms('OK. We will keep checking for up to ' + process.env.QUEUE_TTL_DAYS + ' days. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
+
             // db.addQueued({
             //     citationId: req.session.citationId,
             //     phone: req.body.From
@@ -64,21 +68,19 @@ module.exports = function (context, req) {
             //         next(err);
             //     }
             //     twiml.sms('OK. We will keep checking for up to ' + process.env.QUEUE_TTL_DAYS + ' days. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
-            //     req.session.askedQueued = false;
-            //     res.send(twiml.toString());
             // });
         }
         else {
             context.log("has req.session.askedQueued and did NOT answer yes")
-            // twiml.sms('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
-            // req.session.askedQueued = false;
-            // res.send(twiml.toString());
+            twiml.sms('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
         }
-        context.done(null, res);
+        req.session.askedQueued = false; //reset var to false
+        res = generateResponse(req, twiml);
+        return context.done(null, res);
     }
 
     // First text from number, lookup citation and send response based on results
-    Context.log("First text from phone number");
+    context.log("First text from phone number");
     // db.findCitation(text, function (err, results) {
     //     // If we can't find the case, or find more than one case with the citation
     //     // number, give an error and recommend they call in.
@@ -107,8 +109,6 @@ module.exports = function (context, req) {
     //     res.send(twiml.toString());
     // });
 
-    twiml.message('You said: ' + formValues.Body);
-
     //var encryptSessionString = encrypt(JSON.stringify(req.session));
     // var setCookie = cookie.serialize("session", encryptSessionString, {
     //     secure: true
@@ -131,10 +131,31 @@ module.exports = function (context, req) {
     context.done(null, res);
 };
 
+function generateResponse(req, twiml) {
+    var sessionString = JSON.stringify(req.session);
+    var setCookie = cookie.serialize("session", sessionString, {
+        secure: true
+    });
+
+    var res = {
+        status: 200,
+        body: twiml.toString(),
+        headers: {
+            'Content-Type': 'application/xml',
+            'Set-Cookie': setCookie
+        },
+        isRaw: true
+    };
+
+    return res;
+}
+
 function getCookieSession(context, req) {
     var cookies = cookie.parse(req.headers.cookie || "", {
         secure: true
     });
+
+    context.log("cookies: " + req.headers.cookie);
     var cookieSession;
 
     if (cookies.session) {
@@ -148,7 +169,7 @@ function getCookieSession(context, req) {
     }
     else { // set first time cookie for Twilio 
         context.log("no cookie name found");
-        cookieSession = { askQueued: false, name: "xbob" };
+        cookieSession = {};
     }
 
     return cookieSession;
