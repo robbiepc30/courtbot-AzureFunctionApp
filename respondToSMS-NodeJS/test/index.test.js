@@ -5,7 +5,7 @@ var qs = require('querystring');
 console.log("address: " + process.env.FUNCTION_APP_ADDRESS);
 console.log("path: " + process.env.FUNCTION_APP_PATH);
 var postData = qs.stringify({Body: "Yes"});
-var cookieObj = {askedRemider: true};
+var cookieObj = {askedReminder: true};
 var cookieString = JSON.stringify(cookieObj);
 var cookieSerialized = cookie.serialize("session", cookieString);
 var options = {
