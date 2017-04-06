@@ -6,7 +6,6 @@ var crypto = require('crypto');
 var encryptKey = "s0m3Rand0mStr!ng"; // this should be put into a config var, env var
 var encryptStandard = "aes256";
 
-
 module.exports = function (context, req) {
     var res;
     var twiml = new twilio.TwimlResponse();
@@ -41,11 +40,12 @@ module.exports = function (context, req) {
             //         rollbar.handleError(err, req);
             //     }
             // });
-
+            context.log('Sounds good. We will attempt to text you a courtesy reminder the day before your hearing date. Note that court schedules frequently change. You should always confirm your hearing date and time by going to ' + process.env.COURT_PUBLIC_URL);
             twiml.sms('Sounds good. We will attempt to text you a courtesy reminder the day before your hearing date. Note that court schedules frequently change. You should always confirm your hearing date and time by going to ' + process.env.COURT_PUBLIC_URL);
         }
         else {
             context.log("has req.session.askedQueued and did NOT answer yes")
+            context.log('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
             twiml.sms('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
         }
         req.session.askedReminder = false; //reset var to false
@@ -58,6 +58,7 @@ module.exports = function (context, req) {
         context.log("has req.session.askedQueued")
         if (isResponseYes(text)) {
             context.log("has req.session.askedQueued and texted Yes")
+            context.log('OK. We will keep checking for up to ' + process.env.QUEUE_TTL_DAYS + ' days. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
             twiml.sms('OK. We will keep checking for up to ' + process.env.QUEUE_TTL_DAYS + ' days. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
 
             // db.addQueued({
@@ -72,6 +73,7 @@ module.exports = function (context, req) {
         }
         else {
             context.log("has req.session.askedQueued and did NOT answer yes")
+            context.log('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
             twiml.sms('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
         }
         req.session.askedQueued = false; //reset var to false
