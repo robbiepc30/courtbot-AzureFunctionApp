@@ -18,7 +18,7 @@ module.exports = function (context, req) {
 
     // Is this a response to a queue-triggered SMS? If so, "session" is stored in queue record
     // this needs to be refactored so it is more readable... TODO...
-    if (isResponseYes(text) || isResponseNo(text) && !(req.session.askedQueued || req.session.askedReminder)) {
+    if ((isResponseYes(text) || isResponseNo(text)) && !(req.session.askedQueued || req.session.askedReminder)) {
         context.log("lookup phone # in queued database table and add info to session var");
         // if no info is found in database nothing gets added to the session var
     }
@@ -44,7 +44,7 @@ module.exports = function (context, req) {
             twiml.sms('Sounds good. We will attempt to text you a courtesy reminder the day before your hearing date. Note that court schedules frequently change. You should always confirm your hearing date and time by going to ' + process.env.COURT_PUBLIC_URL);
         }
         else {
-            context.log("has req.session.askedQueued and did NOT answer yes")
+            context.log("has req.session.askedReminder and did NOT answer yes")
             context.log('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
             twiml.sms('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
         }
