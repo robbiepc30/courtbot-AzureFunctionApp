@@ -4,8 +4,9 @@ var cookie = require('cookie');
 var qs = require('querystring');
 var assert = require('assert');
 
-describe("respondToSMS-NodeJS", function () {
-    it('it sends correct response back to twilio: askedReminder=true, text=Yes', function (done) {
+describe("respondToSMS-NodeJS sends correct response back to twilio", function () {
+    this.timeout(5000); // increase timeout, sometimes functions are ins a sleep state... it seems
+    it('for: cookie session.askedReminder=true, text=Yes', function (done) {
         var postData = qs.stringify({ Body: "Yes" });
         var cookieObj = { askedReminder: true };
         var options = getOptions(postData, cookieObj);
@@ -24,7 +25,7 @@ describe("respondToSMS-NodeJS", function () {
         req.write(postData);
         req.end();
     });
-    it('it sends correct response back to twilio: askedReminder=true, text=No', function (done) {
+    it('for: cookie session.askedReminder=true, text=No', function (done) {
         var postData = qs.stringify({ Body: "No" });
         var cookieObj = { askedReminder: true };
         var options = getOptions(postData, cookieObj);
@@ -43,7 +44,7 @@ describe("respondToSMS-NodeJS", function () {
         req.write(postData);
         req.end();
     });
-    it('it sends correct response back to twilio: askedQueued=true, text=Yes', function (done) {
+    it('for: cookie session.askedQueued=true, text=Yes', function (done) {
         var postData = qs.stringify({ Body: "Yes" });
         var cookieObj = { askedQueued: true };
         var options = getOptions(postData, cookieObj);
@@ -62,7 +63,7 @@ describe("respondToSMS-NodeJS", function () {
         req.write(postData);
         req.end();
     });
-        it('it sends correct response back to twilio: askedQueued=true, text=No', function (done) {
+        it('for: cookie session.askedQueued=true, text=No', function (done) {
         var postData = qs.stringify({ Body: "No" });
         var cookieObj = { askedQueued: true };
         var options = getOptions(postData, cookieObj);
