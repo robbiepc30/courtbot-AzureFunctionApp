@@ -26,7 +26,7 @@ module.exports = function (context, req) {
     // If found a citation from a previous text... check the response for yes
     //      if yes add reminder to database and text info about reminder
     //      if no (or anything besides yes) text info about where they can find more information
-    if (req.session.askedReminder) {
+    if (req.session && req.session.askedReminder) {
         context.log("has req.session.askedReminder")
         if (isResponseYes(text)) {
             context.log("has req.session.askedReminder and texted Yes")
@@ -54,7 +54,7 @@ module.exports = function (context, req) {
     }
 
     // If did not find a citation from a previous text... check the response for yes previouse text searched for a citation but did not finddid not find citation but gave an option to send reminder if citation shows up later...
-    if (req.session.askedQueued) {
+    if (req.session && req.session.askedQueued) {
         context.log("has req.session.askedQueued")
         if (isResponseYes(text)) {
             context.log("has req.session.askedQueued and texted Yes")
