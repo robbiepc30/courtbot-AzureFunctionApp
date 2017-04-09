@@ -3,6 +3,7 @@ var qs = require('querystring');
 var twilio = require('twilio');
 var cookie = require('cookie');
 var crypto = require('crypto');
+var emojiStrip = require('emoji-strip');
 var encryptKey = "s0m3Rand0mStr!ng"; // this should be put into a config var, env var
 var encryptStandard = "aes256";
 
@@ -13,7 +14,8 @@ module.exports = function (context, req) {
     var formValues = qs.parse(req.body);
     req.session = getCookieSession(context, req);
     //context.log(formValues);
-    var text = formValues.Body;
+    var text = sanitizeText(formValues.Body);
+
     context.log("req.body.Body text: " + text);
 
     // Is this a response to a queue-triggered SMS? If so, "session" is stored in queue record
@@ -53,7 +55,7 @@ module.exports = function (context, req) {
         return context.done(null, res);
     }
 
-    // If did not find a citation from a previous text... check the response for yes previouse text searched for a citation but did not finddid not find citation but gave an option to send reminder if citation shows up later...
+    // If did not find a citation from a previous text... check the response for yes previous text searched for a citation but did not find did not find citation but gave an option to send reminder if citation shows up later...
     if (req.session && req.session.askedQueued) {
         context.log("has req.session.askedQueued")
         if (isResponseYes(text)) {
@@ -178,12 +180,10 @@ function getCookieSession(context, req) {
 }
 
 function isResponseYes(text) {
-    text = text.toUpperCase().trim();
     return (text === 'YES' || text === 'YEA' || text === 'YUP' || text === 'Y');
 }
 
 function isResponseNo(text) {
-    text = text.toUpperCase().trim();
     return (text === 'NO' || text === 'N');
 }
 
@@ -201,3 +201,12 @@ function decrypt(text) {
     return dec;
 }
 
+function sanitizeText(text) {
+    // if a text is multiline it grabs the first line, 
+    // removes any emojis, 
+    // trims any leading or trailing spaces and changes to uppercase
+    var newText = text.split("\n")[0];
+    newText = emojiStrip(newText); 
+    newText = newText.trim().toUpperCase();
+    return newText;
+}
