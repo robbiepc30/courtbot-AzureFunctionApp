@@ -1,4 +1,5 @@
-﻿'use strict';
+﻿/* jshint node: true */
+'use strict';
 var qs = require('querystring');
 var twilio = require('twilio');
 var cookie = require('cookie');
@@ -29,9 +30,9 @@ module.exports = function (context, req) {
     //      if yes add reminder to database and text info about reminder
     //      if no (or anything besides yes) text info about where they can find more information
     if (req.session && req.session.askedReminder) {
-        context.log("has req.session.askedReminder")
+        context.log("has req.session.askedReminder");
         if (isResponseYes(text)) {
-            context.log("has req.session.askedReminder and texted Yes")
+            context.log("has req.session.askedReminder and texted Yes");
 
             // db.addReminder({
             //     caseId: req.session.match.id,
@@ -46,7 +47,7 @@ module.exports = function (context, req) {
             twiml.sms('Sounds good. We will attempt to text you a courtesy reminder the day before your hearing date. Note that court schedules frequently change. You should always confirm your hearing date and time by going to ' + process.env.COURT_PUBLIC_URL);
         }
         else {
-            context.log("has req.session.askedReminder and did NOT answer yes")
+            context.log("has req.session.askedReminder and did NOT answer yes");
             context.log('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
             twiml.sms('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
         }
@@ -57,9 +58,9 @@ module.exports = function (context, req) {
 
     // If did not find a citation from a previous text... check the response for yes previous text searched for a citation but did not find did not find citation but gave an option to send reminder if citation shows up later...
     if (req.session && req.session.askedQueued) {
-        context.log("has req.session.askedQueued")
+        context.log("has req.session.askedQueued");
         if (isResponseYes(text)) {
-            context.log("has req.session.askedQueued and texted Yes")
+            context.log("has req.session.askedQueued and texted Yes");
             context.log('OK. We will keep checking for up to ' + process.env.QUEUE_TTL_DAYS + ' days. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
             twiml.sms('OK. We will keep checking for up to ' + process.env.QUEUE_TTL_DAYS + ' days. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
 
@@ -74,7 +75,7 @@ module.exports = function (context, req) {
             // });
         }
         else {
-            context.log("has req.session.askedQueued and did NOT answer yes")
+            context.log("has req.session.askedQueued and did NOT answer yes");
             context.log('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
             twiml.sms('OK. You can always go to ' + process.env.COURT_PUBLIC_URL + ' for more information about your case and contact information.');
         }
@@ -117,36 +118,18 @@ module.exports = function (context, req) {
     // var setCookie = cookie.serialize("session", encryptSessionString, {
     //     secure: true
     // });
-    var sessionString = JSON.stringify(req.session);
-    var setCookie = cookie.serialize("session", sessionString, {
-        secure: true
-    });
 
-    var res = {
-        status: 200,
-        body: twiml.toString(),
-        headers: {
-            'Content-Type': 'application/xml',
-            'Set-Cookie': setCookie
-        },
-        isRaw: true
-    };
-
+    res = generateResponse(req, twiml);
     context.done(null, res);
 };
 
 function generateResponse(req, twiml) {
-    var sessionString = JSON.stringify(req.session);
-    var setCookie = cookie.serialize("session", sessionString, {
-        secure: true
-    });
-
     var res = {
         status: 200,
         body: twiml.toString(),
         headers: {
             'Content-Type': 'application/xml',
-            'Set-Cookie': setCookie
+            'Set-Cookie': serializeSessionToCookie(req.session)
         },
         isRaw: true
     };
@@ -188,17 +171,22 @@ function isResponseNo(text) {
 }
 
 function encrypt(text) {
-    var cipher = crypto.createCipher(encryptStandard, encryptKey)
-    var crypted = cipher.update(text, 'utf8', 'hex')
+    var cipher = crypto.createCipher(encryptStandard, encryptKey);
+    var crypted = cipher.update(text, 'utf8', 'hex');
     crypted += cipher.final('hex');
     return crypted;
 }
 
 function decrypt(text) {
-    var decipher = crypto.createDecipher(encryptStandard, encryptKey)
-    var dec = decipher.update(text, 'hex', 'utf8')
+    var decipher = crypto.createDecipher(encryptStandard, encryptKey);
+    var dec = decipher.update(text, 'hex', 'utf8');
     dec += decipher.final('utf8');
     return dec;
+}
+
+function serializeSessionToCookie(session) {
+    var sessionString = JSON.stringify(session);
+    return cookie.serialize("session", sessionString, { secure: true });
 }
 
 function sanitizeText(text) {
@@ -206,7 +194,7 @@ function sanitizeText(text) {
     // removes any emojis, 
     // trims any leading or trailing spaces and changes to uppercase
     var newText = text.split("\n")[0];
-    newText = emojiStrip(newText); 
+    newText = emojiStrip(newText);
     newText = newText.trim().toUpperCase();
     return newText;
 }
