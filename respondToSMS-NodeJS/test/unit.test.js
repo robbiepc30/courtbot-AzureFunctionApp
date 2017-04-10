@@ -1,7 +1,3 @@
-require('dotenv').config();
-var http = require('http');
-var cookie = require('cookie');
-var qs = require('querystring');
 var assert = require('assert');
 var rewire = require('rewire'),
     index = rewire('../index');

@@ -13,7 +13,7 @@ module.exports = function (context, req) {
     var twiml = new twilio.TwimlResponse();
     context.log('JavaScript HTTP trigger function processed a request.');
     var formValues = qs.parse(req.body);
-    req.session = getCookieSession(context, req);
+    req.session = getCookieSession(req.headers.cookie);
     //context.log(formValues);
     var text = sanitizeText(formValues.Body);
 
@@ -114,11 +114,7 @@ module.exports = function (context, req) {
     //     res.send(twiml.toString());
     // });
 
-    //var encryptSessionString = encrypt(JSON.stringify(req.session));
-    // var setCookie = cookie.serialize("session", encryptSessionString, {
-    //     secure: true
-    // });
-
+    twiml.sms("Lookup up citation, still needs to be implemented (need database implementation first)");
     res = generateResponse(req, twiml);
     context.done(null, res);
 };
@@ -137,25 +133,18 @@ function generateResponse(req, twiml) {
     return res;
 }
 
-function getCookieSession(context, req) {
-    var cookies = cookie.parse(req.headers.cookie || "", {
+function getCookieSession(cookieHeader) {
+    var cookies = cookie.parse(cookieHeader || "", {
         secure: true
     });
-
-    context.log("cookies: " + req.headers.cookie);
     var cookieSession;
 
     if (cookies.session) {
-        context.log("session cookie found");
         // var decryptCookie = decrypt(cookies.session);
-        // context.log("session cookie : " + decryptCookie);
-
         // cookieSession = JSON.parse(decryptCookie);
-        context.log("session cookie : " + cookies.session);
         cookieSession = JSON.parse(cookies.session);
     }
     else { // set first time cookie for Twilio 
-        context.log("no cookie name found");
         cookieSession = {};
     }
 
@@ -185,6 +174,8 @@ function decrypt(text) {
 }
 
 function serializeSessionToCookie(session) {
+    // var encryptSessionString = encrypt(JSON.stringify(session));
+    // return cookie.serialize("session", encryptSessionString, { secure: true });
     var sessionString = JSON.stringify(session);
     return cookie.serialize("session", sessionString, { secure: true });
 }
