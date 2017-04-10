@@ -1,4 +1,4 @@
-require('dotenv').config()
+require('dotenv').config();
 var http = require('http');
 var cookie = require('cookie');
 var qs = require('querystring');
@@ -12,7 +12,7 @@ describe("respondToSMS-NodeJS sends correct response back to twilio", function (
         var options = getOptions(postData, cookieObj);
         var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>Sounds good. We will attempt to text you a courtesy reminder the day before your hearing date. Note that court schedules frequently change. You should always confirm your hearing date and time by going to http://courts.alaska.gov</Sms></Response>';
         var callback = function (res) {
-            var response = ""
+            var response = "";
             res.on("data", function (chunk) {
                 response += chunk;
             });
@@ -20,7 +20,7 @@ describe("respondToSMS-NodeJS sends correct response back to twilio", function (
                 assert.equal(response, correctResponse);
                 done();
             });
-        }
+        };
         var req = http.request(options, callback);
         req.write(postData);
         req.end();
@@ -31,7 +31,7 @@ describe("respondToSMS-NodeJS sends correct response back to twilio", function (
         var options = getOptions(postData, cookieObj);
         var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>OK. You can always go to http://courts.alaska.gov for more information about your case and contact information.</Sms></Response>';
         var callback = function (res) {
-            var response = ""
+            var response = "";
             res.on("data", function (chunk) {
                 response += chunk;
             });
@@ -39,7 +39,7 @@ describe("respondToSMS-NodeJS sends correct response back to twilio", function (
                 assert.equal(response, correctResponse);
                 done();
             });
-        }
+        };
         var req = http.request(options, callback);
         req.write(postData);
         req.end();
@@ -50,7 +50,7 @@ describe("respondToSMS-NodeJS sends correct response back to twilio", function (
         var options = getOptions(postData, cookieObj);
         var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>OK. We will keep checking for up to 10 days. You can always go to http://courts.alaska.gov for more information about your case and contact information.</Sms></Response>';
         var callback = function (res) {
-            var response = ""
+            var response = "";
             res.on("data", function (chunk) {
                 response += chunk;
             });
@@ -58,7 +58,7 @@ describe("respondToSMS-NodeJS sends correct response back to twilio", function (
                 assert.equal(response, correctResponse);
                 done();
             });
-        }
+        };
         var req = http.request(options, callback);
         req.write(postData);
         req.end();
@@ -69,7 +69,7 @@ describe("respondToSMS-NodeJS sends correct response back to twilio", function (
         var options = getOptions(postData, cookieObj);
         var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>OK. You can always go to http://courts.alaska.gov for more information about your case and contact information.</Sms></Response>';
         var callback = function (res) {
-            var response = ""
+            var response = "";
             res.on("data", function (chunk) {
                 response += chunk;
             });
@@ -77,30 +77,30 @@ describe("respondToSMS-NodeJS sends correct response back to twilio", function (
                 assert.equal(response, correctResponse);
                 done();
             });
-        }
+        };
         var req = http.request(options, callback);
         req.write(postData);
         req.end();
     });
-    it('for: no cookie (first text from phone number, or past 4hrs from last text), text=2Shrt', function (done) {
-        var postData = qs.stringify({ Body: "2Shrt" });
-        var cookieObj = { askedQueued: true };
-        var options = getOptions(postData, null);
-        var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>Couldn\'t find your case. Case identifier should be 6 to 25 numbers and/or letters in length.</Sms></Response>';
-        var callback = function (res) {
-            var response = ""
-            res.on("data", function (chunk) {
-                response += chunk;
-            });
-            res.on("end", function () {
-                assert.equal(response, correctResponse);
-                done();
-            });
-        }
-        var req = http.request(options, callback);
-        req.write(postData);
-        req.end();
-    });
+    // it('for: no cookie (first text from phone number, or past 4hrs from last text), text=2Shrt', function (done) {
+    //     var postData = qs.stringify({ Body: "2Shrt" });
+    //     var cookieObj = { askedQueued: true };
+    //     var options = getOptions(postData, null);
+    //     var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>Couldn\'t find your case. Case identifier should be 6 to 25 numbers and/or letters in length.</Sms></Response>';
+    //     var callback = function (res) {
+    //         var response = ""
+    //         res.on("data", function (chunk) {
+    //             response += chunk;
+    //         });
+    //         res.on("end", function () {
+    //             assert.equal(response, correctResponse);
+    //             done();
+    //         });
+    //     }
+    //     var req = http.request(options, callback);
+    //     req.write(postData);
+    //     req.end();
+    // });
 });
 
 function getOptions(data, cookieObj) {
