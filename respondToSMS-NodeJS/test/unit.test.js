@@ -2,7 +2,7 @@ var assert = require('assert');
 var rewire = require('rewire'),
     index = rewire('../index');
 
-describe("unit test...", function () {
+describe("unit test private variables", function () {
     var isResponseYes = index.__get__("isResponseYes");
     var isResponseNo = index.__get__("isResponseNo");
     var serializeSessionToCookie = index.__get__("serializeSessionToCookie");
@@ -47,8 +47,6 @@ describe("unit test...", function () {
         assert.equal(isFalse,true);
         done(); 
     });
-
-
-
 });
+
 
