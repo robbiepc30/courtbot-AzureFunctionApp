@@ -1,6 +1,10 @@
+"use strict";
 var assert = require('assert');
 var rewire = require('rewire'),
     index = rewire('../index');
+var AzureFunction = require('../index');
+var fs = require('fs');
+var mockRequest = JSON.parse(fs.readFileSync(__dirname  + "/fixtures/request.json", "utf8"));
 
 describe("unit test private variables", function () {
     var isResponseYes = index.__get__("isResponseYes");
@@ -48,5 +52,36 @@ describe("unit test private variables", function () {
         done(); 
     });
 });
+
+
+// // Local development query and body params
+var debugQuery = {
+    "code": "This is the code"
+}
+var debugBody = {
+    "name": "Azure"
+}
+// // Local development request object
+// var req = JSON.parse(req)
+// // Local development context
+var debugContext = {
+    invocationId: 'ID',
+    bindings: {
+        mockRequest
+    },
+    log: function () {
+        var util = require('util');
+        var val = util.format.apply(null, arguments);
+        console.log(val);
+    },
+    done: function () {
+        // When done is called, it will log the response to the console
+        console.log('Response:', this.res);
+    },
+    res: null
+};
+
+// Call the AzureFunction locally with your testing params
+AzureFunction(debugContext, mockRequest);
 
 
