@@ -2,9 +2,8 @@
 var assert = require('assert');
 var rewire = require('rewire'),
     index = rewire('../index');
-var AzureFunction = require('../index');
+var azureFunction = require('../index');
 var fs = require('fs');
-var mockRequest = JSON.parse(fs.readFileSync(__dirname  + "/fixtures/request.json", "utf8"));
 
 describe("unit test private variables", function () {
     var isResponseYes = index.__get__("isResponseYes");
@@ -42,46 +41,45 @@ describe("unit test private variables", function () {
         var yes = sanitizeText(" YeS");
         var yea = sanitizeText("yeA  ");
         var yup = sanitizeText("YUP ");
-        var y =  sanitizeText("y");
+        var y = sanitizeText("y");
         var yo = sanitizeText("yo ");
         var no = sanitizeText("no ");
         var isTrue = isResponseYes(yes) && isResponseYes(yea) && isResponseYes(yup) && isResponseYes(y);
         var isFalse = !isResponseYes(yo) && !isResponseYes(no);
         assert.equal(isTrue, true);
-        assert.equal(isFalse,true);
-        done(); 
+        assert.equal(isFalse, true);
+        done();
     });
 });
 
+describe("respondToSMS-NodeJS sends correct response back to twilio", function () {
+    var mockRequest = JSON.parse(fs.readFileSync(__dirname + "/fixtures/request.json", "utf8"));
+    // mocking context object for Azure Function to do local unit test and debugging
+    var context = {
+        invocationId: 'ID',
+        bindings: {
+            mockRequest
+        },
+        log: function () {
+            // do nothing for mocha unit test, uncomment if needed to debug.
+            // var util = require('util');
+            // var val = util.format.apply(null, arguments);
+            // console.log(val);
+        },
+        done: function (err, propertyBag) {
+            // done this way incase the context.res is used and then done() is called instead of calling done with the response argument.
+            this.res = propertyBag;
+            return this.res.body;
+        },
+        res: null
+    };
 
-// // Local development query and body params
-var debugQuery = {
-    "code": "This is the code"
-}
-var debugBody = {
-    "name": "Azure"
-}
-// // Local development request object
-// var req = JSON.parse(req)
-// // Local development context
-var debugContext = {
-    invocationId: 'ID',
-    bindings: {
-        mockRequest
-    },
-    log: function () {
-        var util = require('util');
-        var val = util.format.apply(null, arguments);
-        console.log(val);
-    },
-    done: function () {
-        // When done is called, it will log the response to the console
-        console.log('Response:', this.res);
-    },
-    res: null
-};
+    it("for: cookie session.askedReminder=true, text=Yes", function (done) {
+        var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>Sounds good. We will attempt to text you a courtesy reminder the day before your hearing date. Note that court schedules frequently change. You should always confirm your hearing date and time by going to http://courts.alaska.gov</Sms></Response>';
+        var response = azureFunction(context, mockRequest);
+        assert.equal(response, correctResponse);
+        done();
+    });
 
-// Call the AzureFunction locally with your testing params
-AzureFunction(debugContext, mockRequest);
-
+});
 

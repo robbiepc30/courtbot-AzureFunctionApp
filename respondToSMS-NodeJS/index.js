@@ -1,5 +1,6 @@
 ﻿/* jshint node: true */
 'use strict';
+require('dotenv').config(); // needed for local dev, unit test
 var qs = require('querystring');
 var twilio = require('twilio');
 var cookie = require('cookie');
@@ -8,7 +9,7 @@ var emojiStrip = require('emoji-strip');
 var encryptKey = "s0m3Rand0mStr!ng"; // this should be put into a config var, env var
 var encryptStandard = "aes256";
 
-module.exports = function (context, req) {
+var AzureFunction = function (context, req) {
     var res;
     var twiml = new twilio.TwimlResponse();
     context.log('JavaScript HTTP trigger function processed a request.');
@@ -189,3 +190,6 @@ function sanitizeText(text) {
     newText = newText.trim().toUpperCase();
     return newText;
 }
+
+module.exports = AzureFunction;
+
