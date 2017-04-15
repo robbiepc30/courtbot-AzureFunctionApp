@@ -1,9 +1,12 @@
+/* jshint node: true */
 "use strict";
 var assert = require('assert');
 var rewire = require('rewire'),
     index = rewire('../index');
 var azureFunction = require('../index');
 var fs = require('fs');
+var cookie = require('cookie');
+var qs = require('querystring');
 
 describe("unit test private variables", function () {
     var isResponseYes = index.__get__("isResponseYes");
@@ -53,8 +56,70 @@ describe("unit test private variables", function () {
 });
 
 describe("respondToSMS-NodeJS sends correct response back to twilio", function () {
-    var mockRequest = JSON.parse(fs.readFileSync(__dirname + "/fixtures/request.json", "utf8"));
     // mocking context object for Azure Function to do local unit test and debugging
+
+    it("for: cookie session.askedReminder=true, text=Yes", function (done) {
+        var postData = qs.stringify({ Body: "Yes" });
+        var cookieObj = { askedReminder: true };
+        var cookieSerialized = cookie.serialize("session", JSON.stringify(cookieObj));
+        var req = getMockRequest(postData, cookieSerialized);
+        var context = getContext(req);
+        var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>Sounds good. We will attempt to text you a courtesy reminder the day before your hearing date. Note that court schedules frequently change. You should always confirm your hearing date and time by going to http://courts.alaska.gov</Sms></Response>';
+        var response = azureFunction(context, req);
+        assert.equal(response, correctResponse);
+        done();
+    });
+
+    it('for: cookie session.askedReminder=true, text=No', function (done) {
+        var postData = qs.stringify({ Body: "No" });
+        var cookieObj = { askedReminder: true };
+        var cookieSerialized = cookie.serialize("session", JSON.stringify(cookieObj));
+        var req = getMockRequest(postData, cookieSerialized);
+        var context = getContext(req);
+        var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>OK. You can always go to http://courts.alaska.gov for more information about your case and contact information.</Sms></Response>';
+        var response = azureFunction(context, req);
+        assert.equal(response, correctResponse);
+        done();
+    });
+    it('for: cookie session.askedQueued=true, text=Yes', function (done) {
+        var postData = qs.stringify({ Body: "Yes" });
+        var cookieObj = { askedQueued: true };
+        var cookieSerialized = cookie.serialize("session", JSON.stringify(cookieObj));
+        var req = getMockRequest(postData, cookieSerialized);
+        var context = getContext(req);
+        var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>OK. We will keep checking for up to 10 days. You can always go to http://courts.alaska.gov for more information about your case and contact information.</Sms></Response>';
+        var response = azureFunction(context, req);
+        assert.equal(response, correctResponse);
+        done();
+    });
+
+    it('for: cookie session.askedQueued=true, text=No', function (done) {
+        var postData = qs.stringify({ Body: "No" });
+        var cookieObj = { askedQueued: true };
+        var cookieSerialized = cookie.serialize("session", JSON.stringify(cookieObj));
+        var req = getMockRequest(postData, cookieSerialized);
+        var context = getContext(req);
+        var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>OK. You can always go to http://courts.alaska.gov for more information about your case and contact information.</Sms></Response>';
+        var response = azureFunction(context, req);
+        assert.equal(response, correctResponse);
+        done();
+    });
+
+    it('for: no cookie (first text from phone number, or past 4hrs from last text), text=2Shrt', function (done) {
+        var postData = qs.stringify({ Body: "2Shrt" });
+        var cookieObj = null;
+        var cookieSerialized = cookie.serialize("session", JSON.stringify(cookieObj));
+        var req = getMockRequest(postData, cookieSerialized);
+        var context = getContext(req);
+        var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>Lookup up citation, still needs to be implemented (need database implementation first)</Sms></Response>';
+        var response = azureFunction(context, req);
+        assert.equal(response, correctResponse);
+        done();
+    });
+});
+
+// TODO: at some point make these into classes and refactor...
+function getContext(mockRequest) {
     var context = {
         invocationId: 'ID',
         bindings: {
@@ -73,13 +138,33 @@ describe("respondToSMS-NodeJS sends correct response back to twilio", function (
         },
         res: null
     };
+    return context;
+}
 
-    it("for: cookie session.askedReminder=true, text=Yes", function (done) {
-        var correctResponse = '<?xml version="1.0" encoding="UTF-8"?><Response><Sms>Sounds good. We will attempt to text you a courtesy reminder the day before your hearing date. Note that court schedules frequently change. You should always confirm your hearing date and time by going to http://courts.alaska.gov</Sms></Response>';
-        var response = azureFunction(context, mockRequest);
-        assert.equal(response, correctResponse);
-        done();
-    });
-
-});
+function getMockRequest(body, cookie) {
+    var mockRequest = {
+        "originalUrl": "http://azureFunction.azurewebsites.net/api/azureFunction?code=somerandomestring",
+        "method": "POST",
+        "query": {
+            "code": "somerandomstring"
+        },
+        "headers": {
+            "connection": "Keep-Alive",
+            "cookie": cookie,
+            "host": "azureFunction.azurewebsites.net",
+            "max-forwards": "10",
+            "x-liveupgrade": "1",
+            "x-original-url": "/api/azureFunction?code=somerandomestring",
+            "x-arr-log-id": "someID",
+            "disguised-host": "azureFunction.azurewebsites.net",
+            "x-site-deployment-id": "azureFunction",
+            "was-default-hostname": "azureFunction.azurewebsites.net",
+            "x-forwarded-for": "127.0.0.1:5500"
+        },
+        "body": body,
+        "params": {},
+        "rawBody": body
+    };
+    return mockRequest;
+}
 

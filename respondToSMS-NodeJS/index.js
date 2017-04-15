@@ -117,7 +117,7 @@ var AzureFunction = function (context, req) {
 
     twiml.sms("Lookup up citation, still needs to be implemented (need database implementation first)");
     res = generateResponse(req, twiml);
-    context.done(null, res);
+    return context.done(null, res);
 };
 
 function generateResponse(req, twiml) {
