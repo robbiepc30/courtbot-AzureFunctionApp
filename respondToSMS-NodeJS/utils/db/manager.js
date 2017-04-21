@@ -1,26 +1,30 @@
-require("dotenv").config();
+require('dotenv').config({ path: __dirname + '/../../.env' }); // using require('dotenv').config();  can cause problems if not ran from current directory... specifying this path fixes those problems
+console.log(__dirname + '/../../.env');
+console.log(process.env.AZURE_DB_HOST);
 var Promise = require('bluebird');
 var promises = require("../promises"),
 	callFn = promises.callFn,
 	chainable = promises.chainablePromise,
 	dates = require("../dates");
 
-var TIMESTAMPTZ_OID = 1184;
-require("pg").types.setTypeParser(TIMESTAMPTZ_OID, dates.isoToUtc);
+// var TIMESTAMPTZ_OID = 1184;
+// require("pg").types.setTypeParser(TIMESTAMPTZ_OID, dates.isoToUtc);
 
 var KNEX;
 
 module.exports = {
-	knex: function() {
-		if(!KNEX) {
-			KNEX = require("knex")({
-				client: "pg",
-				connection: process.env.DATABASE_URL,
-				pool: {
-					afterCreate: function(connection, callback) {
-						connection.query("SET TIME ZONE 'UTC';", function(err) {
-							callback(err, connection);
-						});
+	knex: function () {
+		if (!KNEX) {
+			KNEX = require('knex')({
+				client: 'mssql',
+				connection: {
+					host: process.env.AZURE_DB_HOST,
+					user: process.env.AZURE_DB_USER,
+					password: process.env.AZURE_DB_PASSWORD,
+					options: {
+						port: 1433,
+						database: process.env.AZURE_DB_DBNAME,
+						encrypt: true
 					}
 				}
 			});
@@ -37,7 +41,7 @@ module.exports = {
 	 * 
 	 * @return {Promise} Promise to ensure all courtbot tables exist.
 	 */
-	ensureTablesExist: function() {
+	ensureTablesExist: function () {
 		return module.exports.createAll();
 	},
 
@@ -46,7 +50,7 @@ module.exports = {
 	 * 
 	 * @return {Promise} Promise to drop all necessary tables.
 	 */
-	dropAll: function() {
+	dropAll: function () {
 		return Promise.all(Object.keys(_createTable).map(module.exports.dropTable));
 	},
 
@@ -55,7 +59,7 @@ module.exports = {
 	 * 
 	 * @return {Promise} promise to create all tables needed by courtbot
 	 */
-	createAll: function() {
+	createAll: function () {
 		return Promise.all(Object.keys(_createTable).map(module.exports.createTable));
 	},
 
@@ -65,9 +69,9 @@ module.exports = {
 	 * @param  {String} table name of the table to be dropped.
 	 * @return {Promise}	Promise to drop the specified table.
 	 */
-	dropTable: function(table) {
-		return new Promise(function(resolve, reject) {
-			module.exports.knex().schema.dropTableIfExists(table).asCallback(function(){
+	dropTable: function (table) {
+		return new Promise(function (resolve, reject) {
+			module.exports.knex().schema.dropTableIfExists(table).asCallback(function () {
 				console.log("Dropped existing table \"" + table + "\"");
 				resolve();
 			});
@@ -81,26 +85,26 @@ module.exports = {
 	 * @param  {function} table (optional) function to be performed after table is created.
 	 * @return {Promise}  Promise to create table if it does not exist.
 	 */
-	createTable: function(table, postCreateCallback) {
-		return new Promise(function(resolve, reject) {
+	createTable: function (table, postCreateCallback) {
+		return new Promise(function (resolve, reject) {
 			console.log("Trying to create table: " + table);
-			if(!_createTable[table]) {
+			if (!_createTable[table]) {
 				console.log("No Table Creation Instructions found for table \"" + table + "\".");
 				resolve();
 			} else {
-				module.exports.knex().schema.hasTable(table).then(function(exists) {
-					if(exists) {
+				module.exports.knex().schema.hasTable(table).then(function (exists) {
+					if (exists) {
 						console.log("Table \"" + table + "\" already exists.  Will not create.");
 						resolve();
 					} else {
 						_createTable[table](postCreateCallback)
-							.then(function(){
+							.then(function () {
 								console.log("Table created:  \"" + table + "\"");
 								resolve();
-							});	
+							});
 					}
 				});
-			}				
+			}
 		});
 	},
 
@@ -111,7 +115,7 @@ module.exports = {
 	 * @param  {Array} chunk Array of rows to insert into the table.
 	 * @return {void} 
 	 */
-	insertTableChunk: function(table, chunk) {
+	insertTableChunk: function (table, chunk) {
 		return module.exports.knex()(table).insert(chunk);
 	},
 
@@ -120,7 +124,7 @@ module.exports = {
 	 * 
 	 * @return {void} 
 	 */
-	closeConnection: function() {
+	closeConnection: function () {
 		return module.exports.knex().client.pool.destroy();
 	}
 };
@@ -131,9 +135,9 @@ module.exports = {
  * @type {Object} 
  */
 var _createTable = {
-	cases: function(cb) {
-		return new Promise(function(resolve, reject) {
-			module.exports.knex().schema.createTableIfNotExists("cases", function(table){
+	cases: function (cb) {
+		return new Promise(function (resolve, reject) {
+			module.exports.knex().schema.createTableIfNotExists("cases", function (table) {
 				table.string('id', 100).primary();
 				table.string('defendant', 100);
 				table.timestamp('date');
@@ -142,14 +146,14 @@ var _createTable = {
 				table.string('room', 100);
 				table.json('citations');
 			})
-			.then(callFn(_postCreateCallback, cb))
-			.then(_createIndexForCases)				
-			.then(resolve);
+				.then(callFn(_postCreateCallback, cb))
+				.then(_createIndexForCases)
+				.then(resolve);
 		});
 	},
-	queued: function(cb) {
-		return new Promise(function(resolve, reject) {
-			module.exports.knex().schema.createTableIfNotExists("queued", function(table) {
+	queued: function (cb) {
+		return new Promise(function (resolve, reject) {
+			module.exports.knex().schema.createTableIfNotExists("queued", function (table) {
 				table.increments("queued_id").primary();
 				table.dateTime("created_at");
 				table.string("citation_id", 100);
@@ -158,13 +162,13 @@ var _createTable = {
 				table.boolean("asked_reminder");
 				table.dateTime("asked_reminder_at");
 			})
-			.then(callFn(_postCreateCallback, cb))
-			.then(resolve);
+				.then(callFn(_postCreateCallback, cb))
+				.then(resolve);
 		});
 	},
-	reminders: function(cb) {
-		return new Promise(function(resolve, reject) {
-			module.exports.knex().schema.createTableIfNotExists("reminders", function(table) {
+	reminders: function (cb) {
+		return new Promise(function (resolve, reject) {
+			module.exports.knex().schema.createTableIfNotExists("reminders", function (table) {
 				table.increments("reminder_id").primary();
 				table.dateTime("created_at");
 				table.string("case_id", 100);
@@ -172,8 +176,8 @@ var _createTable = {
 				table.boolean("sent", 100);
 				table.json("original_case");
 			})
-			.then(callFn(_postCreateCallback, cb))
-			.then(resolve);
+				.then(callFn(_postCreateCallback, cb))
+				.then(resolve);
 		});
 	}
 
@@ -186,9 +190,9 @@ var _createTable = {
  * @param  {Function} cb function to be called
  * @return {Promise}	promise to execute callback function
  */
-var _postCreateCallback = function(cb) {
-	return new Promise(function(resolve, reject) {
-		if(cb && typeof cb === "function") {
+var _postCreateCallback = function (cb) {
+	return new Promise(function (resolve, reject) {
+		if (cb && typeof cb === "function") {
 			cb().then(resolve);
 		} else {
 			resolve();
@@ -202,8 +206,8 @@ var _postCreateCallback = function(cb) {
  * 
  * @return {Promise} Promise to create indexing function for and index for cases table.
  */
-var _createIndexForCases = function() {
-	return new Promise(function(resolve, reject){
+var _createIndexForCases = function () {
+	return new Promise(function (resolve, reject) {
 		var cases_indexing_function = [
 			'CREATE OR REPLACE FUNCTION json_val_arr(_j json, _key text)',
 			'  RETURNS text[] AS',

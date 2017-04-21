@@ -12,7 +12,7 @@ module.exports = {
 	forEachResult: function(task) {
 		return function(results) {
 			return Promise.map(results, task);
-		}
+		};
 	},
 
 	/**
@@ -56,4 +56,4 @@ module.exports = {
 	    resolve(result);
 	  };
 	}
-}
+};

@@ -12,6 +12,7 @@
     "crypto": "0.0.3",
     "emoji-strip": "^1.0.1",
     "knex": "^0.12.9",
+    "moment-timezone": "^0.5.13",
     "mssql": "^3.3.0",
     "twilio": "^2.11.1"
   },
