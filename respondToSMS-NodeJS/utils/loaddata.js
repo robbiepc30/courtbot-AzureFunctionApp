@@ -7,7 +7,7 @@ var Promise = require('bluebird');
 var callFn = require("./promises").callFn;
 var sha1 = require('sha1');
 var dates = require("./dates");
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/../.env' }); // using require('dotenv').config();  can cause problems if not ran from current directory... specifying this path fixes those problems
 var manager = require("./db/manager");
 var moment = require("moment-timezone");
 
@@ -122,7 +122,9 @@ var recreateDB = function(cases, callback) {
     // Make violations a JSON blob, to keep things simple
     cases.forEach(function(c) { c.citations = JSON.stringify(c.citations); });
 
-    var chunks = chunk(cases, 1000);
+// This is where the Error happens at 500 or above chunk size (trial and error testing...) the following error occurs when using azure mssql:
+// The incoming request has too many parameters. The server supports a maximum of 2100 parameters.
+    var chunks = chunk(cases, 250);
     return Promise.all(chunks.map(function(chunk) {
       return manager.insertTableChunk("cases", chunk);
     }));

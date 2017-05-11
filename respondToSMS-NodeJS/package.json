@@ -8,12 +8,15 @@
   },
   "author": "Robbie Courtney",
   "dependencies": {
+    "bluebird": "^3.5.0",
     "cookie": "^0.3.1",
     "crypto": "0.0.3",
+    "csv-parse": "^1.2.0",
     "emoji-strip": "^1.0.1",
     "knex": "^0.12.9",
     "moment-timezone": "^0.5.13",
     "mssql": "^3.3.0",
+    "sha1": "^1.1.1",
     "twilio": "^2.11.1"
   },
   "devDependencies": {
