@@ -16,11 +16,24 @@ module.exports = {
 
 	/**
 	 * UTC timezone offset in minutes
-	 * @atDate - Effective date for the offset
++	 * @atDate - Effective date for the offset (MM/DD/YYYY, YYYY-MM-DD, moment, or default to today if null)
 	 * @return {int} offset
 	 */
 	timezoneOffset: function(atDate) {
-		var dt = atDate ? atDate : moment().format("YYYY-MM-DD");
+		var dt = "";
+		if (atDate) {
+			if (typeof atDate == "string") {
+				if (atDate.indexOf("/") == -1)  {
+					dt = atDate;   // String in YYYY-MM-DD already
+				} else {
+					dt = moment(atDate, "MM/DD/YYYY").format("YYYY-MM-DD");   // String in MM/DD/YYYY
+				}
+			} else {
+				dt = atDate.format("YYYY-MM-DD");    // Moment object
+			}
+		} else {
+			dt = moment().format("YYYY-MM-DD");      // Default to today
+		}
 		var tz = moment.tz(dt, process.env.TIMEZONE).format('Z');
 		console.log("Date: " + moment(dt).format("YYYY-MM-DD") + " Offset: " + tz);
 		return tz;
@@ -65,7 +78,10 @@ module.exports = {
 	 * @return {moment} moment combine separate date and time into a single date and time moment object.
 	 */
 	fromDateAndTime: function(date, time) {
-		return moment(date + " " + time + " " + module.exports.timezoneOffset(date), "MM/DD/YYYY hh:mm A Z");
+		
+		return moment(date + " " + time + " " + module.exports.timezoneOffset(date), "YYYY/MM/DD HH:MM:SS"); // needs to be this for mssql
+		//return moment(date + " " + time + " " + module.exports.timezoneOffset(date), "MM/DD/YYYY hh:mm"); // format not allowed for mssql
+		//return moment(date + " " + time + " " + module.exports.timezoneOffset(date), "MM/DD/YYYY hh:mm A Z"); // format not allowed for mssql
 	},
 
 	/**
