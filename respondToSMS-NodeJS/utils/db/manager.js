@@ -129,7 +129,7 @@ module.exports = {
 	}
 };
 
-/**
+/**ß
  * Set of instructions for creating tables needed by the courtbot application.
  * 
  * @type {Object} 
@@ -141,13 +141,13 @@ var _createTable = {
 				table.string('id', 100).primary();
 				table.string('defendant', 100);
 				table.timestamp('date');
-				//table.specificType("date", "timestamptz");
+				//table.specificType("date", "datetime2");
 				table.string('time', 100);
 				table.string('room', 100);
 				table.json('citations');
 			})
 				.then(callFn(_postCreateCallback, cb))
-				.then(_createIndexForCases)
+				//.then(_createIndexForCases)
 				.then(resolve);
 		});
 	},
@@ -206,20 +206,20 @@ var _postCreateCallback = function (cb) {
  * 
  * @return {Promise} Promise to create indexing function for and index for cases table.
  */
-var _createIndexForCases = function () {
-	return new Promise(function (resolve, reject) {
-		var cases_indexing_function = [
-			'CREATE OR REPLACE FUNCTION json_val_arr(_j json, _key text)',
-			'  RETURNS text[] AS',
-			"'",
-			'SELECT array_agg(elem->>_key)',
-			'FROM   json_array_elements(_j) AS x(elem)',
-			"'",
-			'  LANGUAGE sql IMMUTABLE;'].join('\n');
+// var _createIndexForCases = function () {
+// 	return new Promise(function (resolve, reject) {
+// 		var cases_indexing_function = [
+// 			'CREATE OR REPLACE FUNCTION json_val_arr(_j json, _key text)',
+// 			'  RETURNS text[] AS',
+// 			"'",
+// 			'SELECT array_agg(elem->>_key)',
+// 			'FROM   json_array_elements(_j) AS x(elem)',
+// 			"'",
+// 			'  LANGUAGE sql IMMUTABLE;'].join('\n');
 
-		module.exports.knex().raw(cases_indexing_function)
-			.then(module.exports.knex().raw("DROP INDEX IF EXISTS citation_ids_gin_idx"))
-			.then(module.exports.knex().raw("CREATE INDEX citation_ids_gin_idx ON cases USING GIN (json_val_arr(citations, 'id'))"))
-			.then(resolve);
-	});
-};
+// 		module.exports.knex().raw(cases_indexing_function)
+// 			.then(module.exports.knex().raw("DROP INDEX IF EXISTS citation_ids_gin_idx"))
+// 			.then(module.exports.knex().raw("CREATE INDEX citation_ids_gin_idx ON cases USING GIN (json_val_arr(citations, 'id'))"))
+// 			.then(resolve);
+// 	});
+// };
