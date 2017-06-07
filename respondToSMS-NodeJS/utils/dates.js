@@ -78,10 +78,7 @@ module.exports = {
 	 * @return {moment} moment combine separate date and time into a single date and time moment object.
 	 */
 	fromDateAndTime: function(date, time) {
-		
-		return moment(date + " " + time + " " + module.exports.timezoneOffset(date), "YYYY/MM/DD HH:MM:SS"); // needs to be this for mssql
-		//return moment(date + " " + time + " " + module.exports.timezoneOffset(date), "MM/DD/YYYY hh:mm"); // format not allowed for mssql
-		//return moment(date + " " + time + " " + module.exports.timezoneOffset(date), "MM/DD/YYYY hh:mm A Z"); // format not allowed for mssql
+		return moment(date + " " + time + " " + module.exports.timezoneOffset(date), "MM/DD/YYYY hh:mm").format("YYYY-MM-DD HH:mm:ss"); // needs to be this format for mssql
 	},
 
 	/**

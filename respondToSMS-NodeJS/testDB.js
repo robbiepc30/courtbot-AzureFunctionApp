@@ -1,5 +1,4 @@
 require('dotenv').config({path: __dirname + '/.env'}); // using require('dotenv').config();  can cause problems if not ran from current directory... specifying this path fixes those problems
-console.log(process.env.AZURE_DB_HOST);
 var knex = require('knex')({
   client : 'mssql',
   connection: {

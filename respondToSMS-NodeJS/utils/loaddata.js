@@ -84,6 +84,7 @@ var extractCourtData = function(rows) {
       citations: []
     };
 
+    //console.log(newCase.date.toString());
     //console.log("INCOMING: ", c[0], "|", c[5], "|", newCase.date);
 
     // Since no values here are actually unique, we create some lookups
