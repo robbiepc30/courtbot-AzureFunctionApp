@@ -144,7 +144,8 @@ var _createTable = {
 				//table.specificType("date", "datetime2");
 				table.string('time', 100);
 				table.string('room', 100);
-				table.json('citations');
+				//table.json('citations');
+				table.specificType("citations", "nvarchar(max)");
 			})
 				.then(callFn(_postCreateCallback, cb))
 				//.then(_createIndexForCases)
