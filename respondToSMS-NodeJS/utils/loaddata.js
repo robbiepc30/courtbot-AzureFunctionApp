@@ -17,14 +17,14 @@ var loadData = function () {
   console.log('Downloading latest CSV file...');
 
   return new Promise(function (resolve, reject) {
-    request.get(url, function(req, res) {
+    request.get(url, function (req, res) {
       console.log('Parsing CSV File...');
 
       if (res.statusCode == 404) {
         console.log("404 page not found: ", url);
         reject("404 page not found");
       } else {
-        parse(res.body, {delimiter: ','}, function(err, rows) {
+        parse(res.body, { delimiter: ',' }, function (err, rows) {
           if (err) {
             console.log('Unable to parse file: ', url);
             console.log(err);
@@ -33,7 +33,7 @@ var loadData = function () {
 
           console.log('Extracting court case information...');
           var cases = extractCourtData(rows);
-          recreateDB(cases, function() {
+          recreateDB(cases, function () {
             console.log('Database recreated! All systems are go.');
             resolve(true);
           });
@@ -55,18 +55,19 @@ var loadData = function () {
  * @param  {array} rows - Citation records
  * @return {date} cases - Cases derrived from citation data
  */
-var extractCourtData = function(rows) {
+var extractCourtData = function (rows) {
   var cases = [];
+  var citations = [];
   var casesMap = {};
   var citationsMap = {};
 
-  rows.forEach(function(c) {
+  rows.forEach(function (c) {
     var citationInfo = c[8].split(":");
     var newCitation = {
       id: c[6],
       violation: citationInfo[0],
       description: citationInfo[1],
-      location: c[6].substr(0,3)
+      location: c[6].substr(0, 3)
     };
 
     // If we want to test reminders, set all dates to tomorrow
@@ -77,7 +78,7 @@ var extractCourtData = function(rows) {
     }
 
     var newCase = {
-      date: dates.fromDateAndTime(c[0], c[5]), 
+      date: dates.fromDateAndTime(c[0], c[5]),
       defendant: c[2] + " " + c[1],
       room: c[4],
       time: c[5],
@@ -91,6 +92,9 @@ var extractCourtData = function(rows) {
     var citationLookup = newCitation.id + newCitation.violation;
     var caseLookup = newCase.id = sha1(newCase.defendant + newCitation.location.slice(0, 6));
 
+    // set up FK relation for citations to cases
+    newCitation.caseID = newCase.id;
+
     // The checks below handle the multiple citations in the dataset issue.
     // See above for a more detailed explanation.
     var prevCitation = citationsMap[citationLookup];
@@ -102,42 +106,58 @@ var extractCourtData = function(rows) {
     if (prevCitation && prevCase) {
       //prevCase.date = moment.max(prevCase.date, newCase.date).format("YYYY-MM-DD HH:mm:ss");
     } else if (prevCase) {
-     // prevCase.date = moment.max(prevCase.date, newCase.date).format("YYYY-MM-DD HH:mm:ss");
+      // prevCase.date = moment.max(prevCase.date, newCase.date).format("YYYY-MM-DD HH:mm:ss");
       prevCase.citations.push(newCitation);
+      citations.push(newCitation);
       citationsMap[citationLookup] = newCitation;
     } else {
       cases.push(newCase);
       casesMap[caseLookup] = newCase;
 
       newCase.citations.push(newCitation);
+      citations.push(newCitation);
       citationsMap[citationLookup] = newCitation;
     }
   });
-
-  return cases;
+  return {
+    cases: cases,
+    citations: citations
+  };
 };
 
-var recreateDB = function(cases, callback) {
+var recreateDB = function (caseInfo, callback) {
+  cases = caseInfo.cases;
+  citations = caseInfo.citations;
   // inserts cases, 1000 at a time.
-  var insertCases = function() {
+  var insertCases = function () {
     // Make violations a JSON blob, to keep things simple
-    cases.forEach(function(c) { c.citations = JSON.stringify(c.citations); });
+    cases.forEach(function (c) { c.citations = JSON.stringify(c.citations); });
 
-// This is where the Error happens at 500 or above chunk size (trial and error testing...) the following error occurs when using azure mssql:
-// The incoming request has too many parameters. The server supports a maximum of 2100 parameters.
+    // This is where the Error happens at 500 or above chunk size (trial and error testing...) the following error occurs when using azure mssql:
+    // The incoming request has too many parameters. The server supports a maximum of 2100 parameters.
     var chunks = chunk(cases, 250);
-    return Promise.all(chunks.map(function(chunk) {
+    return Promise.all(chunks.map(function (chunk) {
       return manager.insertTableChunk("cases", chunk);
+    }));
+  };
+  var insertCitations = function () {
+    // This is where the Error happens at 500 or above chunk size (trial and error testing...) the following error occurs when using azure mssql:
+    // The incoming request has too many parameters. The server supports a maximum of 2100 parameters.
+    var chunks = chunk(citations, 250);
+    return Promise.all(chunks.map(function (chunk) {
+      return manager.insertTableChunk("citations", chunk);
     }));
   };
 
   manager.dropTable("cases")
+    .then(manager.dropTable("citations"))
     .then(callFn(manager.createTable, "cases", insertCases))
+    .then(callFn(manager.createTable, "citations", insertCitations))
     .then(manager.closeConnection)
     .then(callback);
 };
 
-var chunk = function(arr, len) {
+var chunk = function (arr, len) {
   var chunks = [];
   var i = 0;
   var n = arr.length;

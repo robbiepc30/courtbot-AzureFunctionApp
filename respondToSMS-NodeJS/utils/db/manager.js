@@ -147,7 +147,20 @@ var _createTable = {
 				//table.json('citations');
 				table.specificType("citations", "nvarchar(max)");
 			})
-				.then(_createCitationsTable)
+				.then(callFn(_postCreateCallback, cb))
+				.then(resolve);
+		});
+	},
+	citations: function (cb) {
+		return new Promise(function (resolve, reject) {
+			module.exports.knex().schema.createTableIfNotExists("citations", function (table) {
+				table.string('id', 100).primary();
+				table.string('violation', 100);
+				table.string('description', 250);
+				table.string('location', 25);
+				table.string('caseId', 100);
+				table.foreign('caseID').references('cases.id');
+			})
 				.then(callFn(_postCreateCallback, cb))
 				.then(resolve);
 		});
@@ -163,7 +176,6 @@ var _createTable = {
 				table.boolean("asked_reminder");
 				table.dateTime("asked_reminder_at");
 			})
-				.then(_createCitationsTable)
 				.then(callFn(_postCreateCallback, cb))
 				.then(resolve);
 		});
@@ -178,7 +190,6 @@ var _createTable = {
 				table.boolean("sent", 100);
 				table.json("original_case");
 			})
-				.then(_createCitationsTable)
 				.then(callFn(_postCreateCallback, cb))
 				.then(resolve);
 		});
@@ -213,6 +224,6 @@ var _createCitationsTable = function () {
 			table.string('caseId', 100);
 			table.foreign('caseID').references('cases.id');
 		})
-		.then(resolve);
+			.then(resolve);
 	});
 };
