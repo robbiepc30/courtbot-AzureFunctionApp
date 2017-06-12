@@ -21,6 +21,8 @@ module.exports = {
 					host: process.env.AZURE_DB_HOST,
 					user: process.env.AZURE_DB_USER,
 					password: process.env.AZURE_DB_PASSWORD,
+					connectionTimeout: 300000,
+    				requestTimeout: 300000,
 					options: {
 						port: 1433,
 						database: process.env.AZURE_DB_DBNAME,
@@ -158,7 +160,7 @@ var _createTable = {
 				table.string('violation', 100);
 				table.string('description', 250);
 				table.string('location', 25);
-				table.string('caseId', 100);
+				table.string('caseID', 100);
 				table.foreign('caseID').references('cases.id');
 			})
 				.then(callFn(_postCreateCallback, cb))
