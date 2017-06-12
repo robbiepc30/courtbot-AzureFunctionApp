@@ -147,8 +147,8 @@ var _createTable = {
 				//table.json('citations');
 				table.specificType("citations", "nvarchar(max)");
 			})
+				.then(_createCitationsTable)
 				.then(callFn(_postCreateCallback, cb))
-				//.then(_createIndexForCases)
 				.then(resolve);
 		});
 	},
@@ -163,6 +163,7 @@ var _createTable = {
 				table.boolean("asked_reminder");
 				table.dateTime("asked_reminder_at");
 			})
+				.then(_createCitationsTable)
 				.then(callFn(_postCreateCallback, cb))
 				.then(resolve);
 		});
@@ -177,6 +178,7 @@ var _createTable = {
 				table.boolean("sent", 100);
 				table.json("original_case");
 			})
+				.then(_createCitationsTable)
 				.then(callFn(_postCreateCallback, cb))
 				.then(resolve);
 		});
@@ -201,26 +203,16 @@ var _postCreateCallback = function (cb) {
 	});
 };
 
-/**
- * 1.) Create indexing function for cases table using this strategy: http://stackoverflow.com/a/18405706
- * 2.) Drop and recreate index for cases table.
- * 
- * @return {Promise} Promise to create indexing function for and index for cases table.
- */
-var _createIndexForCases = function () {
+var _createCitationsTable = function () {
 	return new Promise(function (resolve, reject) {
-		var cases_indexing_function = [
-			'CREATE OR REPLACE FUNCTION json_val_arr(_j json, _key text)',
-			'  RETURNS text[] AS',
-			"'",
-			'SELECT array_agg(elem->>_key)',
-			'FROM   json_array_elements(_j) AS x(elem)',
-			"'",
-			'  LANGUAGE sql IMMUTABLE;'].join('\n');
-
-		module.exports.knex().raw(cases_indexing_function)
-			.then(module.exports.knex().raw("DROP INDEX IF EXISTS citation_ids_gin_idx"))
-			.then(module.exports.knex().raw("CREATE INDEX citation_ids_gin_idx ON cases USING GIN (json_val_arr(citations, 'id'))"))
-			.then(resolve);
+		module.exports.knex().schema.createTableIfNotExists("citations", function (table) {
+			table.string('id', 100).primary();
+			table.string('violation', 100);
+			table.string('description', 250);
+			table.string('location', 25);
+			table.string('caseId', 100);
+			table.foreign('caseID').references('cases.id');
+		})
+		.then(resolve);
 	});
 };
