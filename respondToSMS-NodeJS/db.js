@@ -3,7 +3,16 @@ require('dotenv').config();
 var manager = require("./utils/db/manager");
 var knex = manager.knex();
 var now = require("./utils/dates").now;
-
+// SELECT Name,Surname,
+//  JSON_VALUE(jsonCol,'$.info.address.PostCode') AS PostCode,
+//  JSON_VALUE(jsonCol,'$.info.address."Address Line 1"')+' '
+//   +JSON_VALUE(jsonCol,'$.info.address."Address Line 2"') AS Address,
+//  JSON_QUERY(jsonCol,'$.info.skills') AS Skills
+// FROM People
+// WHERE ISJSON(jsonCol)>0
+//  AND JSON_VALUE(jsonCol,'$.info.address.Town')='Belgrade'
+//  AND Status='Active'
+// ORDER BY JSON_VALUE(jsonCol,'$.info.address.PostCode')
 exports.findCitation = function(citation, callback) {
   // Postgres JSON search based on prebuilt index
   citation = escapeSQL(citation.toUpperCase().trim());

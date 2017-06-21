@@ -35,7 +35,7 @@ module.exports = {
 	 */
 	callFn: function() {
 		var args = Array.prototype.slice.call(arguments);
-			params = args.length > 1 ? args.slice(1) : [];
+		var params = args.length > 1 ? args.slice(1) : [];
 
 		return function() {
 			return args[0].apply(this, params);
