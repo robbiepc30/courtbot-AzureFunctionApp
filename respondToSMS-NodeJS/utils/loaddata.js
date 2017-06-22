@@ -104,9 +104,9 @@ var extractCourtData = function (rows) {
     // If we've seen this case, this is an additional citation on it
     // Otherwise, both the case and the citation are new.
     if (prevCitation && prevCase) {
-      //prevCase.date = moment.max(prevCase.date, newCase.date).format("YYYY-MM-DD HH:mm:ss");
+      prevCase.date = moment.max(moment(prevCase.date, "YYYY-MM-DD HH:mm:ss"), moment(newCase.date, "YYYY-MM-DD HH:mm:ss")).format("YYYY-MM-DD HH:mm:ss");
     } else if (prevCase) {
-      // prevCase.date = moment.max(prevCase.date, newCase.date).format("YYYY-MM-DD HH:mm:ss");
+      prevCase.date = moment.max(moment(prevCase.date, "YYYY-MM-DD HH:mm:ss"), moment(newCase.date, "YYYY-MM-DD HH:mm:ss")).format("YYYY-MM-DD HH:mm:ss");
       prevCase.citations.push(newCitation);
       citations.push(newCitation);
       citationsMap[citationLookup] = newCitation;
